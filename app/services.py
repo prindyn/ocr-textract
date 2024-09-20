@@ -1,9 +1,8 @@
 import os
-import easyocr
+import time
 from typing import List, Dict
-from fastapi import UploadFile, HTTPException
-
-reader = easyocr.Reader(['en'])
+from fastapi import UploadFile
+from lib.aws_boto3 import textract
 
 
 async def upload_file(file: UploadFile) -> str:
@@ -30,9 +29,29 @@ async def remove_file(file: UploadFile) -> bool:
 
 async def extract_text_from_image(image_path: str) -> List[Dict[str, float]]:
     try:
-        results = reader.readtext(image_path)
-        extracted_text = [{"text": text, "confidence": prob}
-                          for (_, text, prob) in results]
+        job_status = ""
+        extracted_text = []
+
+        if not os.path.exists(image_path):
+            raise FileExistsError(f"File not found: {image_path}")
+
+        with open(image_path, "rb") as f:
+            image = f.read()
+
+        while job_status != 200:
+            response = textract.detect_document_text(
+                Document={'Bytes': image}
+            )
+            job_status = response['ResponseMetadata']['HTTPStatusCode']
+            if job_status != 200:
+                time.sleep(5)
+
+        if job_status == 200:
+            for block in response['Blocks']:
+                if block['BlockType'] == 'LINE':
+                    extracted_text.append(
+                        {"text": block['Text'], "confidence": block['Confidence']})
+
         return extracted_text
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise Exception(f"Exception while extracting text: {str(e)}")

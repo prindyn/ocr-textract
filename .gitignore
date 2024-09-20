@@ -1,1 +1,41 @@
-.pytest_cache
+# Python cache files
+__pycache__/
+*.py[cod]
+
+# Virtual environment
+venv/
+env/
+.env
+
+# Dependency files
+*.egg-info/
+dist/
+build/
+
+# Configuration files
+*.sqlite3
+*.db
+*.log
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Coverage reports
+.coverage
+htmlcov/
+
+# Miscellaneous
+*.pkl
+*.pyc
+*.pyo
+*.pyd
+
+# MacOS
+.DS_Store
+
+!.gitignore

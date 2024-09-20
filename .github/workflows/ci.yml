@@ -3,22 +3,23 @@ name: CI
 on: [push]
 
 jobs:
-    build:
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v2
-            
-            - name: Set up Python
-              uses: actions/setup-python@v2
-              with:
-                python-version: '3.9'
-            
-            - name: Install dependencies
-              run: |
-                python -m pip install --upgrade pip pipenv
-                pipenv install --dev
-            
-            - name: Run tests
-              run: |
-                pipenv run pytest
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build Docker image
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+        run: |
+          docker build -t easyocr:latest .
+
+      - name: Run tests in Docker
+        run: |
+          docker run --rm easyocr:latest pipenv run pytest

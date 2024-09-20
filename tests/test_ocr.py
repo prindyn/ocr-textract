@@ -3,7 +3,7 @@ import pytest
 from app.services import extract_text_from_image
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def image_path():
     path = 'tests/uploads/ocr_test.jpg'
     assert os.path.exists(path), f"Image not found: {path}"

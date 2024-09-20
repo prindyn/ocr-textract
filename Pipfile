@@ -5,10 +5,11 @@ name = "pypi"
 
 [packages]
 fastapi = {extras = ["standard"], version = "*"}
-easyocr = "*"
 uvicorn = "*"
 pytest = "*"
 pytest-asyncio = "*"
+boto3 = "*"
+"jaraco.path" = "*"
 
 [dev-packages]
 
