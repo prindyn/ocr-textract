@@ -11,6 +11,16 @@ def image_path():
 
 
 @pytest.mark.asyncio
+async def test_textract_endpoint_connection() -> None:
+    # given
+    from lib.aws_boto3 import textract
+    # when
+    response = textract.list_adapters()
+    # then
+    assert response['ResponseMetadata']['HTTPStatusCode'] == 200
+
+
+@pytest.mark.asyncio
 async def test_ocr_extraction(image_path) -> None:
    # given image_path
     # when

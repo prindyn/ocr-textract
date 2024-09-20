@@ -3,6 +3,7 @@ import time
 from typing import List, Dict
 from fastapi import UploadFile
 from lib.aws_boto3 import textract
+from botocore.exceptions import EndpointConnectionError
 
 
 async def upload_file(file: UploadFile) -> str:
@@ -53,5 +54,7 @@ async def extract_text_from_image(image_path: str) -> List[Dict[str, float]]:
                         {"text": block['Text'], "confidence": block['Confidence']})
 
         return extracted_text
+    except EndpointConnectionError as e:
+        raise Exception(f"Exception while connecting to AWS Textract: {str(e)}")
     except Exception as e:
         raise Exception(f"Exception while extracting text: {str(e)}")
