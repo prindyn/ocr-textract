@@ -70,17 +70,21 @@ jobs:
       - name: Deploy to DigitalOcean
         env:
           DO_SSH_KEY: ${{ secrets.DO_SSH_KEY }}
-          DO_SERVER_IP: ${{ vars.DO_SERVER_IP }}
-          GITHUB_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          DO_SERVER_IP: ${{ secrets.DO_SERVER_IP }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
         run: |
           echo -e "$DO_SSH_KEY" > do_ssh_key.key
           chmod 600 do_ssh_key.key
 
-          ssh -i do_ssh_key.key -o StrictHostKeyChecking=no root@$DO_SERVER_IP <<'EOF'
-            echo "$GITHUB_TOKEN" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          ssh -i do_ssh_key.key -o StrictHostKeyChecking=no root@$DO_SERVER_IP << EOF
+            echo "${GHCR_TOKEN}" | docker login ghcr.io -u ${GITHUB_ACTOR} --password-stdin
+
             docker stop easyocr || true
             docker rm easyocr || true
+            
             docker pull ghcr.io/${{ github.repository }}/easyocr:latest
+
+            # Run the Docker container
             docker run -d --name easyocr \
               -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
               -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
@@ -88,4 +92,4 @@ jobs:
               ghcr.io/${{ github.repository }}/easyocr:latest
           EOF
 
-          rm -rf do_ssh_key.key
+          rm -f do_ssh_key.key
