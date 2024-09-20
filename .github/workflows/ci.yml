@@ -72,6 +72,9 @@ jobs:
           DO_SSH_KEY: ${{ secrets.DO_SSH_KEY }}
           DO_SERVER_IP: ${{ vars.DO_SERVER_IP }}
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ vars.AWS_DEFAULT_REGION }}
         run: |
           echo -e "$DO_SSH_KEY" > do_ssh_key.key
           chmod 600 do_ssh_key.key
@@ -86,9 +89,9 @@ jobs:
 
             # Run the Docker container
             docker run -d --name easyocr -p 80:8000 --restart always \
-              -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
-              -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
-              -e AWS_DEFAULT_REGION=${{ secrets.AWS_DEFAULT_REGION }} \
+              -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+              -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+              -e AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION \
               ghcr.io/${{ github.repository }}/easyocr:latest
           EOF
 
