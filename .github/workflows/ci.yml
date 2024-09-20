@@ -54,7 +54,7 @@ jobs:
           echo -e "$DO_SSH_KEY" > do_ssh_key.key
           chmod 600 do_ssh_key.key
 
-          ssh -i do_ssh_key.key -o StrictHostKeyChecking=no root@$DO_SERVER_IP <<'EOF'
+          ssh -i do_ssh_key.key -o StrictHostKeyChecking=no root@$DO_SERVER_IP <<EOF
             if ! command -v docker &> /dev/null; then
               echo "Docker not found. Installing Docker..."
               apt-get update && apt-get install -y docker.io
@@ -70,13 +70,13 @@ jobs:
       - name: Deploy to DigitalOcean
         env:
           DO_SSH_KEY: ${{ secrets.DO_SSH_KEY }}
-          DO_SERVER_IP: ${{ secrets.DO_SERVER_IP }}
+          DO_SERVER_IP: ${{ vars.DO_SERVER_IP }}
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
         run: |
           echo -e "$DO_SSH_KEY" > do_ssh_key.key
           chmod 600 do_ssh_key.key
 
-          ssh -i do_ssh_key.key -o StrictHostKeyChecking=no root@$DO_SERVER_IP << EOF
+          ssh -i do_ssh_key.key -o StrictHostKeyChecking=no root@$DO_SERVER_IP <<EOF
             echo "${GHCR_TOKEN}" | docker login ghcr.io -u ${GITHUB_ACTOR} --password-stdin
 
             docker stop easyocr || true
