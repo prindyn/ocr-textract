@@ -1,6 +1,9 @@
 name: CI
 
-on: [push]
+on:
+  push:
+    branches:
+      - main
 
 jobs:
   build:
@@ -12,14 +15,65 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_TOKEN }}
+
       - name: Build Docker image
         run: |
-          docker build -t easyocr:latest .
+          docker build -t ghcr.io/${{ github.repository }}/easyocr:latest .
 
       - name: Run tests in Docker
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
         run: |
           docker run --rm \
-            -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
-            -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
-            -e AWS_DEFAULT_REGION=${{ secrets.AWS_DEFAULT_REGION }} \
-            easyocr:latest pipenv run pytest
+            -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+            -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+            -e AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION \
+            ghcr.io/${{ github.repository }}/easyocr:latest pipenv run pytest
+
+      - name: Build and push Docker image
+        run: |
+          docker push ghcr.io/${{ github.repository }}/easyocr:latest
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ensure Docker is installed on remote server
+        env:
+          DO_SSH_KEY: ${{ secrets.DO_SSH_KEY }}
+          DO_SERVER_IP: ${{ secrets.DO_SERVER_IP }}
+        run: |
+          ssh -o StrictHostKeyChecking=no -i $DO_SSH_KEY root@$DO_SERVER_IP <<'EOF'
+            if ! command -v docker &> /dev/null; then
+              echo "Docker not found. Installing Docker..."
+              apt-get update && apt-get install -y docker.io
+              systemctl start docker
+              systemctl enable docker
+            else
+              echo "Docker is already installed."
+            fi
+          EOF
+
+      - name: Deploy to DigitalOcean
+        env:
+          DO_SSH_KEY: ${{ secrets.DO_SSH_KEY }}
+          DO_SERVER_IP: ${{ secrets.DO_SERVER_IP }}
+        run: |
+          ssh -o StrictHostKeyChecking=no -i $DO_SSH_KEY root@$DO_SERVER_IP <<'EOF'
+            docker pull ghcr.io/${{ github.repository }}/easyocr:latest
+            docker stop easyocr || true
+            docker rm easyocr || true
+            docker run -d --name easyocr \
+              -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
+              -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
+              -e AWS_DEFAULT_REGION=${{ secrets.AWS_DEFAULT_REGION }} \
+              ghcr.io/${{ github.repository }}/easyocr:latest
+          EOF
