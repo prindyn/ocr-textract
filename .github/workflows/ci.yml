@@ -51,7 +51,10 @@ jobs:
           DO_SSH_KEY: ${{ secrets.DO_SSH_KEY }}
           DO_SERVER_IP: ${{ secrets.DO_SERVER_IP }}
         run: |
-          ssh -o StrictHostKeyChecking=no -i $DO_SSH_KEY root@$DO_SERVER_IP <<'EOF'
+          echo "$DO_SSH_KEY" > do_ssh_key
+          chmod 600 do_ssh_key
+
+          ssh -o StrictHostKeyChecking=no -i do_ssh_key root@$DO_SERVER_IP <<'EOF'
             if ! command -v docker &> /dev/null; then
               echo "Docker not found. Installing Docker..."
               apt-get update && apt-get install -y docker.io
@@ -67,7 +70,10 @@ jobs:
           DO_SSH_KEY: ${{ secrets.DO_SSH_KEY }}
           DO_SERVER_IP: ${{ secrets.DO_SERVER_IP }}
         run: |
-          ssh -o StrictHostKeyChecking=no -i $DO_SSH_KEY root@$DO_SERVER_IP <<'EOF'
+          echo "$DO_SSH_KEY" > do_ssh_key
+          chmod 600 do_ssh_key
+
+          ssh -o StrictHostKeyChecking=no -i do_ssh_key root@$DO_SERVER_IP <<'EOF'
             docker pull ghcr.io/${{ github.repository }}/easyocr:latest
             docker stop easyocr || true
             docker rm easyocr || true
